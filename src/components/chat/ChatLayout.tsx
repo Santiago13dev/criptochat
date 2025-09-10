@@ -1,3 +1,5 @@
+/**componente de layout principal del chat que incluye el header, la barra lateral y el area de chat*/
+
 'use client'
 
 import { useState } from 'react'

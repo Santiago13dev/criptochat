@@ -1,3 +1,5 @@
+/**servidor de la aplicacion de chat en tiempo real usando express y socket.io*/
+
 const express = require('express');
 const { Server } = require('socket.io');
 const cors = require('cors');

@@ -1,3 +1,5 @@
+/**utilidades para manejo de clases CSS, generacion de IDs unicos y formateo de tiempo*/
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 

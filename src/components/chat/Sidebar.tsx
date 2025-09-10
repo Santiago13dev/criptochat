@@ -1,3 +1,5 @@
+/**componente de la barra lateral del chat que incluye opciones para escanear QR, ver codigo QR, lista de contactos y configuracion*/
+
 import { useState } from 'react'
 import { QrCode, UserPlus, Settings } from 'lucide-react'
 

@@ -1,3 +1,5 @@
+/*componente principal de la aplicacion*/
+
 'use client'
 
 import { useState, useEffect } from 'react'

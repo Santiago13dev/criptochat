@@ -1,5 +1,5 @@
-// Simplified encryption for demo
-// In production, use @noble/secp256k1 or similar
+// componente para manejo de criptografia (generacion de llaves, cifrado y descifrado de mensajes)
+// en produccion, usar librerias como crypto, tweetnacl, etc.
 
 export function generateKeyPair() {
   return {

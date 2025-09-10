@@ -1,3 +1,4 @@
+/**componente del area de chat donde se muestran los mensajes y el input para enviar nuevos mensajes*/
 import { useState } from 'react'
 import { Send, Paperclip, Lock } from 'lucide-react'
 
