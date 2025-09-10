@@ -1,4 +1,4 @@
-/**componente de layout principal del chat que incluye el header, la barra lateral y el area de chat*/
+/**componente de layout principal del chat que incluye diseño del header, la barra lateral y el area de chat*/
 
 'use client'
 
