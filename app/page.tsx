@@ -1,4 +1,4 @@
-/*componente principal de la aplicacion*/
+/*componente principal de la aplicacion donde se maneja la logica de autenticacion y se renderiza la interfaz de usuario*/
 
 'use client'
 
