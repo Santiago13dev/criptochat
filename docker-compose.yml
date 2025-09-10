@@ -1,3 +1,5 @@
+/*archivo docker-compose para orquestar servicios de la aplicacion CriptoChat*/
+*/
 version: '3.8'
 services:
   app:
