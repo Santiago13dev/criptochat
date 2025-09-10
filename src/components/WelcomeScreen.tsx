@@ -1,5 +1,5 @@
 /**componente de la pantalla de bienvenida que muestra el logo, titulo, descripcion y boton para comenzar*/
-
+/** funcion que maneja el inicio de sesion */
 export function WelcomeScreen({ onStart }) {
   return (
     <div className="h-full flex items-center justify-center">
