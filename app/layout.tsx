@@ -1,4 +1,4 @@
-/** Layout principal de la aplicación que incluye metadatos y estructura HTML básica */
+/** Layout principal de la aplicación que incluye metadatos y estructura HTML básica como la imagen */
 
 import type { Metadata } from 'next'
 import './globals.css'
