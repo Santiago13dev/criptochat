@@ -1,4 +1,4 @@
-/**importaciones necesarias de tailwindcss para estilo*/
+/**importaciones necesarias de tailwindcss para estilo base,components,utilities*/
 
 @tailwind base;
 @tailwind components;
