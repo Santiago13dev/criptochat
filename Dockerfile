@@ -1,3 +1,5 @@
+/*archivo Docker para construir y ejecutar la aplicacion CriptoChat*/
+
 FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
