@@ -1,4 +1,4 @@
-/**servidor de la aplicacion de chat en tiempo real usando express y socket.io*/
+/**servidor de la aplicacion de chat en tiempo real usando express y socket.io para optimización*/
 
 const express = require('express');
 const { Server } = require('socket.io');
