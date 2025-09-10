@@ -1,4 +1,4 @@
-/**componente del header del chat que incluye el titulo y el estado de la conexion*/
+/**componente del header del chat que incluye el titulo y el estado de la conexion para chats*/
 import { Shield } from 'lucide-react'
 
 export function Header() {
