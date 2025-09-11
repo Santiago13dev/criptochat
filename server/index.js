@@ -1,5 +1,3 @@
-/**servidor de la aplicacion de chat en tiempo real usando express y socket.io para optimización*/
-
 const express = require('express');
 const { Server } = require('socket.io');
 const cors = require('cors');
@@ -18,42 +16,80 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// Store connected users
+// Almacenar usuarios conectados
 const users = new Map();
+const messages = new Map();
 
 io.on('connection', (socket) => {
-  console.log('New client connected:', socket.id);
+  console.log('✅ Usuario conectado:', socket.id);
   
-  socket.on('register', (userId) => {
-    users.set(userId, socket.id);
-    console.log('User registered:', userId);
+  // Registrar usuario
+  socket.on('register', (userData) => {
+    users.set(userData.id, {
+      socketId: socket.id,
+      ...userData
+    });
+    console.log(`📝 Usuario registrado: ${userData.id}`);
+    
+    // Notificar a otros usuarios
+    socket.broadcast.emit('user-online', userData.id);
   });
   
-  socket.on('message', (data) => {
-    const { to, message } = data;
-    const recipientSocket = users.get(to);
+  // Manejar mensajes
+  socket.on('send-message', (data) => {
+    const { to, from, message, encrypted } = data;
     
-    if (recipientSocket) {
-      io.to(recipientSocket).emit('message', {
-        from: data.from,
-        message: message,
+    // Buscar el socket del destinatario
+    const recipient = users.get(to);
+    
+    if (recipient) {
+      // Enviar mensaje al destinatario
+      io.to(recipient.socketId).emit('receive-message', {
+        from,
+        message,
+        encrypted,
         timestamp: Date.now()
       });
+      
+      console.log(`💬 Mensaje enviado de ${from} a ${to}`);
+    } else {
+      // Guardar mensaje para cuando el usuario se conecte
+      if (!messages.has(to)) {
+        messages.set(to, []);
+      }
+      messages.get(to).push(data);
+      console.log(`📥 Mensaje guardado para ${to} (offline)`);
     }
   });
   
+  // Verificar mensajes pendientes
+  socket.on('check-messages', (userId) => {
+    if (messages.has(userId)) {
+      const pendingMessages = messages.get(userId);
+      pendingMessages.forEach(msg => {
+        socket.emit('receive-message', msg);
+      });
+      messages.delete(userId);
+      console.log(`📤 Entregados ${pendingMessages.length} mensajes a ${userId}`);
+    }
+  });
+  
+  // Desconexión
   socket.on('disconnect', () => {
-    for (const [userId, socketId] of users.entries()) {
-      if (socketId === socket.id) {
+    // Buscar qué usuario se desconectó
+    for (const [userId, userData] of users.entries()) {
+      if (userData.socketId === socket.id) {
         users.delete(userId);
+        socket.broadcast.emit('user-offline', userId);
+        console.log(`👋 Usuario desconectado: ${userId}`);
         break;
       }
     }
-    console.log('Client disconnected:', socket.id);
   });
 });
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(`📡 WebSocket listo para conexiones`);
 });
