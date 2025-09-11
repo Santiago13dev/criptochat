@@ -1,5 +1,6 @@
 'use client'
 
+import { socketManager } from '@/lib/socket'
 import { useState, useEffect, useRef } from 'react'
 
 interface Message {
@@ -31,7 +32,30 @@ export default function Home() {
   useEffect(() => {
     const myId = 'user_' + Math.random().toString(36).substr(2, 9)
     setMyQRCode(myId)
+    useEffect(() => {
+  if (myQRCode) {
+    const socket = socketManager.connect(myQRCode, 'Usuario');
     
+    socketManager.onMessage((data) => {
+      // Agregar mensaje recibido
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        text: data.message,
+        sender: 'other',
+        timestamp: new Date(data.timestamp),
+        encrypted: data.encrypted
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
+      
+      // Notificación
+      new Notification('Nuevo mensaje', {
+        body: data.message,
+        icon: '/icon.png'
+      });
+    });
+  }
+}, [myQRCode]);
     // Cargar contactos guardados
     const savedContacts = localStorage.getItem('criptochat_contacts')
     if (savedContacts) {
