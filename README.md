@@ -237,18 +237,6 @@ Si encuentras un bug, por favor abre un [issue](https://github.com/Santiago13dev
 ![Último Commit](https://img.shields.io/github/last-commit/Santiago13dev/criptochat?style=flat-square)
 ![Tamaño del Repo](https://img.shields.io/github/repo-size/Santiago13dev/criptochat?style=flat-square)
 
-## 🔐 Seguridad
-
-### Divulgación Responsable
-
-Si descubres una vulnerabilidad de seguridad, por favor envía un email a kevin.rodriguezgomez1308@gmail.com en lugar de usar el issue tracker público.
-
-### Auditorías
-
-- [ ] Auditoría de código pendiente
-- [ ] Pruebas de penetración pendientes
-- [ ] Certificación de seguridad en proceso
-
 ## 📄 Licencia
 
 Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
@@ -257,18 +245,8 @@ Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](L
 
 **Santiago Rodriguez**
 
-- 🌐 Portfolio: [github.com/Santiago13dev](https://github.com/Santiago13dev)
-- 💼 LinkedIn: [linkedin.com/in/tu-perfil](https://linkedin.com/in/tu-perfil)
 - 🐙 GitHub: [@Santiago13dev](https://github.com/Santiago13dev)
 - 📧 Email: kevin.rodriguezgomez1308@gmail.com
-
-## 🙏 Agradecimientos
-
-- Al equipo de **Next.js** por el increíble framework
-- A **Vercel** por el hosting gratuito
-- A **Tailwind CSS** por hacer el CSS divertido otra vez
-- A la comunidad **open source** por la inspiración
-- A todos los que han probado y dado feedback
 
 ## 📊 Estadísticas
 
