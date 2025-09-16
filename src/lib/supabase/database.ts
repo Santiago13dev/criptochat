@@ -1,3 +1,4 @@
+/* proporciona métodos para interactuar con una base de datos Supabase, incluyendo la gestión de usuarios, el manejo de contactos, el envío y la recepción de mensajes y las suscripciones en tiempo real. */
 import { supabase } from './client'
 import type { User, Contact, Message } from './client'
 
