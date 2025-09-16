@@ -1,3 +1,4 @@
+/* configura una conexión a una base de datos de Supabase mediante la biblioteca `@supabase/supabase-js`. */
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
