@@ -1,3 +1,7 @@
+/**
+ * aplicación de mensajería segura con cifrado de extremo a extremo, autenticación de usuarios, gestión de contactos, manejo de mensajes y comunicación en tiempo real mediante Socket.io y Supabase.
+* @returns El código devuelve un componente React que representa una aplicación de mensajería llamada CriptoChat. El componente tiene dos vistas principales: una pantalla de bienvenida y una pantalla de chat.
+ */
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
