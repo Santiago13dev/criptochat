@@ -1,55 +1,129 @@
 import { io, Socket } from 'socket.io-client';
 
+interface MessageData {
+  to: string;
+  from: string;
+  message: string;
+  encrypted: string;
+  timestamp: number;
+  selfDestruct?: boolean;
+  destructAfter?: number;
+}
+
 class SocketManager {
   private socket: Socket | null = null;
   private userId: string | null = null;
+  private messageHandlers: ((data: any) => void)[] = [];
   
   connect(userId: string, userName: string) {
-    if (this.socket?.connected) return;
+    if (this.socket?.connected) {
+      console.log('Socket already connected');
+      return this.socket;
+    }
     
     this.userId = userId;
-    this.socket = io('http://localhost:3001');
+    this.socket = io('http://localhost:3001', {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+    
+    this.setupEventHandlers(userId, userName);
+    return this.socket;
+  }
+  
+  private setupEventHandlers(userId: string, userName: string) {
+    if (!this.socket) return;
     
     this.socket.on('connect', () => {
-      console.log('✅ Conectado al servidor');
+      console.log('✅ Connected to server');
       
-      // Registrar usuario
+      // Register user
       this.socket?.emit('register', {
         id: userId,
         name: userName,
         timestamp: Date.now()
       });
       
-      // Verificar mensajes pendientes
+      // Check for pending messages
       this.socket?.emit('check-messages', userId);
     });
     
-    return this.socket;
-  }
-  
-  disconnect() {
-    this.socket?.disconnect();
-    this.socket = null;
-  }
-  
-  sendMessage(to: string, message: string, encrypted: string) {
-    this.socket?.emit('send-message', {
-      to,
-      from: this.userId,
-      message,
-      encrypted,
-      timestamp: Date.now()
+    this.socket.on('disconnect', () => {
+      console.log('❌ Disconnected from server');
+    });
+    
+    this.socket.on('receive-message', (data: MessageData) => {
+      console.log('📨 Message received:', data);
+      
+      // Notify all handlers
+      this.messageHandlers.forEach(handler => handler(data));
+      
+      // Show notification
+      if (Notification.permission === 'granted') {
+        new Notification('Nuevo mensaje en CriptoChat', {
+          body: 'Has recibido un mensaje encriptado',
+          icon: '/icon.png',
+          badge: '/badge.png',
+          vibrate: [200, 100, 200]
+        });
+      }
+    });
+    
+    this.socket.on('user-online', (userId: string) => {
+      console.log(`👤 User online: ${userId}`);
+    });
+    
+    this.socket.on('user-offline', (userId: string) => {
+      console.log(`👤 User offline: ${userId}`);
+    });
+    
+    this.socket.on('error', (error: any) => {
+      console.error('Socket error:', error);
     });
   }
   
-  onMessage(callback: (data: any) => void) {
-    this.socket?.on('receive-message', callback);
+  sendMessage(data: MessageData) {
+    if (!this.socket?.connected) {
+      console.error('Socket not connected');
+      return false;
+    }
+    
+    this.socket.emit('send-message', {
+      ...data,
+      from: this.userId,
+      timestamp: Date.now()
+    });
+    
+    return true;
   }
   
-  onUserStatusChange(callback: (userId: string, status: 'online' | 'offline') => void) {
-    this.socket?.on('user-online', (userId) => callback(userId, 'online'));
-    this.socket?.on('user-offline', (userId) => callback(userId, 'offline'));
+  onMessage(handler: (data: any) => void) {
+    this.messageHandlers.push(handler);
+    
+    // Return cleanup function
+    return () => {
+      this.messageHandlers = this.messageHandlers.filter(h => h !== handler);
+    };
+  }
+  
+  disconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+      this.userId = null;
+    }
+  }
+  
+  isConnected(): boolean {
+    return this.socket?.connected || false;
+  }
+  
+  getSocketId(): string | null {
+    return this.socket?.id || null;
   }
 }
 
 export const socketManager = new SocketManager();
+export type { MessageData };
