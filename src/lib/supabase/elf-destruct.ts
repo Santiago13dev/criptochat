@@ -1,3 +1,5 @@
+import { supabase } from "../supabase"
+
 // lib/supabase/self-destruct.ts
 export class SelfDestructManager {
   private timers: Map<string, NodeJS.Timeout> = new Map()
