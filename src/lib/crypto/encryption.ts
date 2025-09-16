@@ -1,3 +1,4 @@
+/* proporciona métodos para generar pares de claves, cifrar y descifrar mensajes usando secp256k1 y guardar/cargar claves hacia/desde el almacenamiento local. */
 import * as secp256k1 from '@noble/secp256k1';
 import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from '@noble/hashes/utils';
