@@ -1,3 +1,4 @@
+/* administra las conexiones de socket, el envío de mensajes y el manejo de eventos para una aplicación de chat. */
 import { io, Socket } from 'socket.io-client';
 
 interface MessageData {
