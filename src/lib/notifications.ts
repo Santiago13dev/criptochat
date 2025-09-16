@@ -1,3 +1,4 @@
+/* gestiona las notificaciones del navegador y muestra notificaciones en la aplicación si el navegador no admite notificaciones nativas.. */
 export class NotificationManager {
   private swRegistration: ServiceWorkerRegistration | null = null;
   
