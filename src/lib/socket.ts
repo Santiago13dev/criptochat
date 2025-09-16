@@ -39,14 +39,12 @@ class SocketManager {
     this.socket.on('connect', () => {
       console.log('✅ Connected to server');
       
-      // Register user
       this.socket?.emit('register', {
         id: userId,
         name: userName,
         timestamp: Date.now()
       });
       
-      // Check for pending messages
       this.socket?.emit('check-messages', userId);
     });
     
@@ -56,27 +54,7 @@ class SocketManager {
     
     this.socket.on('receive-message', (data: MessageData) => {
       console.log('📨 Message received:', data);
-      
-      // Notify all handlers
       this.messageHandlers.forEach(handler => handler(data));
-      
-      // Show notification
-      if (Notification.permission === 'granted') {
-        new Notification('Nuevo mensaje en CriptoChat', {
-          body: 'Has recibido un mensaje encriptado',
-          icon: '/icon.png',
-          badge: '/badge.png',
-          vibrate: [200, 100, 200]
-        });
-      }
-    });
-    
-    this.socket.on('user-online', (userId: string) => {
-      console.log(`👤 User online: ${userId}`);
-    });
-    
-    this.socket.on('user-offline', (userId: string) => {
-      console.log(`👤 User offline: ${userId}`);
     });
     
     this.socket.on('error', (error: any) => {
@@ -101,8 +79,6 @@ class SocketManager {
   
   onMessage(handler: (data: any) => void) {
     this.messageHandlers.push(handler);
-    
-    // Return cleanup function
     return () => {
       this.messageHandlers = this.messageHandlers.filter(h => h !== handler);
     };
@@ -118,10 +94,6 @@ class SocketManager {
   
   isConnected(): boolean {
     return this.socket?.connected || false;
-  }
-  
-  getSocketId(): string | null {
-    return this.socket?.id || null;
   }
 }
 
