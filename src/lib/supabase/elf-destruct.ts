@@ -1,3 +1,4 @@
+/* administra la destrucción programada de mensajes en un sistema de mensajería */
 import { supabase } from "../supabase"
 
 // lib/supabase/self-destruct.ts
