@@ -13,6 +13,7 @@ import type { DBUser } from '@/lib/supabase/client'
 import { SettingsModal } from '../src/components/SettingsModal'
 import { ContactList } from '../src/components/ContactList'
 import { ProfileModal } from '../src/components/ProfileModal'
+import { useUserProfile } from '../src/hooks/useUserProfile'
 import { Settings, QrCode, UserPlus, Shield, User } from 'lucide-react'
 
 interface Message {
@@ -33,13 +34,6 @@ interface Contact {
   lastSeen?: Date
 }
 
-interface UserProfile {
-  name: string
-  status: string
-  avatar: string | null
-  qrCode: string
-}
-
 export default function Home() {
   const [currentView, setCurrentView] = useState<'welcome' | 'chat'>('welcome')
   const [myQRCode, setMyQRCode] = useState('')
@@ -55,12 +49,7 @@ export default function Home() {
   const [isConnected, setIsConnected] = useState(false)
   const [cryptoManager, setCryptoManager] = useState<CryptoManager | null>(null)
   const [currentUser, setCurrentUser] = useState<DBUser | null>(null)
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: 'Usuario',
-    status: '',
-    avatar: null,
-    qrCode: ''
-  })
+  const { profile, saveProfile, clearProfile } = useUserProfile()
 
   // Initialize everything
   useEffect(() => {
@@ -77,15 +66,6 @@ export default function Home() {
     
     const myId = 'user_' + Math.random().toString(36).substr(2, 9)
     setMyQRCode(myId)
-    
-    // Load user profile from localStorage
-    const savedProfile = localStorage.getItem('criptochat_profile')
-    if (savedProfile) {
-      const profile = JSON.parse(savedProfile)
-      setUserProfile({ ...profile, qrCode: myId })
-    } else {
-      setUserProfile(prev => ({ ...prev, qrCode: myId }))
-    }
     
     await notificationManager.init()
     const socket = socketManager.connect(myId, 'Usuario')
@@ -180,16 +160,10 @@ export default function Home() {
     }
   }
 
-  const handleUpdateProfile = (profile: { name: string; status: string; avatar: string | null }) => {
-    const updatedProfile = { ...profile, qrCode: userProfile.qrCode }
-    setUserProfile(updatedProfile)
-    localStorage.setItem('criptochat_profile', JSON.stringify(updatedProfile))
-  }
-
   const handleExportData = () => {
     const exportData = {
       contacts,
-      userProfile,
+      myQRCode,
       settings: { notifications: true, darkMode: true },
       timestamp: new Date().toISOString()
     }
@@ -213,18 +187,17 @@ export default function Home() {
     if (confirm('¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.')) {
       localStorage.removeItem('criptochat_contacts')
       localStorage.removeItem('criptochat_crypto')
-      localStorage.removeItem('criptochat_profile')
+      clearProfile()
       setContacts([])
       setCurrentContact(null)
       setMessages([])
-      setUserProfile({
-        name: 'Usuario',
-        status: '',
-        avatar: null,
-        qrCode: myQRCode
-      })
       alert('Todos los datos han sido eliminados')
     }
+  }
+
+  const handleSaveProfile = (profileData: { avatar: string | null; status: string; name: string }) => {
+    saveProfile(profileData)
+    alert('Perfil actualizado exitosamente')
   }
 
   const sendMessage = async () => {
@@ -277,31 +250,6 @@ export default function Home() {
     setMessages([welcomeMsg])
   }
 
-  // Generate avatar display for header
-  const generateAvatarDisplay = () => {
-    if (userProfile.avatar) {
-      return (
-        <img
-          src={userProfile.avatar}
-          alt="Avatar"
-          className="w-8 h-8 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
-        />
-      )
-    }
-    
-    const initials = userProfile.name
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase())
-      .join('')
-      .substring(0, 2)
-    
-    return (
-      <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white text-sm font-bold border-2 border-gray-300 dark:border-gray-600">
-        {initials || <User className="w-4 h-4" />}
-      </div>
-    )
-  }
-
   if (currentView === 'welcome') {
     return (
       <main className="h-screen bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 text-neutral-primary flex items-center justify-center">
@@ -323,37 +271,45 @@ export default function Home() {
   return (
     <main className="h-screen bg-gray-100 dark:bg-gray-900 text-neutral-primary flex">
       <aside className="w-80 glass-neutral flex flex-col">
-        {/* Header con perfil */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowProfileModal(true)}
-                className="flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
-              >
-                {generateAvatarDisplay()}
-                <div className="text-left">
-                  <div className="font-medium text-neutral-primary">{userProfile.name}</div>
-                  {userProfile.status && (
-                    <div className="text-xs text-neutral-secondary truncate max-w-32">
-                      {userProfile.status}
-                    </div>
-                  )}
-                </div>
-              </button>
+            <div className="flex items-center gap-2">
+              <Shield className="w-6 h-6 text-slate-600" />
+              <h2 className="text-lg font-semibold text-neutral-primary">CriptoChat</h2>
             </div>
-            
             <span className="text-xs text-green-500 flex items-center gap-1">
               <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
               {isConnected ? 'Conectado' : 'Desconectado'}
             </span>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-slate-600" />
-            <h2 className="text-lg font-semibold text-neutral-primary">CriptoChat</h2>
-          </div>
-          <p className="text-xs text-neutral-secondary mt-1">Tu ID: {myQRCode}</p>
+          {/* Profile Section */}
+          <button
+            onClick={() => setShowProfileModal(true)}
+            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mb-3"
+          >
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+              {profile.avatar ? (
+                <img 
+                  src={profile.avatar} 
+                  alt={profile.name || 'Usuario'} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-5 h-5 text-gray-500" />
+              )}
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-medium text-sm text-neutral-primary">
+                {profile.name || 'Configura tu perfil'}
+              </p>
+              <p className="text-xs text-neutral-secondary truncate">
+                {profile.status || 'Sin estado'}
+              </p>
+            </div>
+          </button>
+          
+          <p className="text-xs text-neutral-secondary">Tu ID: {myQRCode}</p>
         </div>
 
         <div className="p-4 space-y-2">
@@ -467,7 +423,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* Modal Mi QR */}
       {showQRModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="card-neutral p-6 max-w-sm w-full">
@@ -491,7 +446,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Modal Escanear/Agregar */}
       {showScanModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="card-neutral p-6 max-w-sm w-full">
@@ -517,7 +471,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Modal de Configuración */}
       <SettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
@@ -525,12 +478,13 @@ export default function Home() {
         onClearData={handleClearData}
       />
 
-      {/* Modal de Perfil */}
       <ProfileModal
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
-        userProfile={userProfile}
-        onUpdateProfile={handleUpdateProfile}
+        currentAvatar={profile.avatar || ''}
+        currentStatus={profile.status}
+        currentName={profile.name}
+        onSaveProfile={handleSaveProfile}
       />
     </main>
   )
