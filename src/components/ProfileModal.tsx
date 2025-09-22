@@ -1,293 +1,280 @@
 /**
- * Modal de perfil de usuario con foto y estado personalizable
+ * Componente modal de perfil de usuario
+ * Permite editar foto de perfil y estado/frase personal
  */
 
-import { useState, useRef } from 'react'
-import { X, Camera, Edit3, Check, User, Smile } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { X, Camera, User, Edit3, Save, RotateCcw } from 'lucide-react'
+import Image from 'next/image'
 
 interface ProfileModalProps {
   isOpen: boolean
   onClose: () => void
-  userProfile: {
-    name: string
-    status: string
+  currentAvatar?: string
+  currentStatus?: string
+  currentName?: string
+  onSaveProfile: (profileData: {
     avatar: string | null
-    qrCode: string
-  }
-  onUpdateProfile: (profile: { name: string; status: string; avatar: string | null }) => void
+    status: string
+    name: string
+  }) => void
 }
 
-export function ProfileModal({ isOpen, onClose, userProfile, onUpdateProfile }: ProfileModalProps) {
-  const [name, setName] = useState(userProfile.name)
-  const [status, setStatus] = useState(userProfile.status)
-  const [avatar, setAvatar] = useState<string | null>(userProfile.avatar)
-  const [isEditingName, setIsEditingName] = useState(false)
-  const [isEditingStatus, setIsEditingStatus] = useState(false)
+export function ProfileModal({ 
+  isOpen, 
+  onClose, 
+  currentAvatar = '',
+  currentStatus = '',
+  currentName = '',
+  onSaveProfile 
+}: ProfileModalProps) {
+  const [avatar, setAvatar] = useState<string | null>(currentAvatar || null)
+  const [status, setStatus] = useState(currentStatus)
+  const [name, setName] = useState(currentName)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatar || null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+  
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  if (!isOpen) return null
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setAvatar(currentAvatar || null)
+      setStatus(currentStatus)
+      setName(currentName)
+      setPreviewUrl(currentAvatar || null)
+      setIsEditing(false)
+      setHasChanges(false)
+    }
+  }, [isOpen, currentAvatar, currentStatus, currentName])
 
-  const statusSuggestions = [
-    "Disponible",
-    "Ocupado",
-    "En una reunión",
-    "No molestar",
-    "Trabajando desde casa",
-    "De viaje",
-    "En pausa",
-    "Conectado desde móvil",
-    "Modo ninja 🥷",
-    "Café primero ☕"
-  ]
+  // Track changes
+  useEffect(() => {
+    const avatarChanged = avatar !== currentAvatar
+    const statusChanged = status !== currentStatus
+    const nameChanged = name !== currentName
+    setHasChanges(avatarChanged || statusChanged || nameChanged)
+  }, [avatar, status, name, currentAvatar, currentStatus, currentName])
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      // Validar tamaño (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen es muy grande. Máximo 5MB.')
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona un archivo de imagen válido')
         return
       }
 
-      // Validar tipo
-      if (!file.type.startsWith('image/')) {
-        alert('Por favor selecciona una imagen válida.')
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen debe ser menor a 5MB')
         return
       }
 
       const reader = new FileReader()
       reader.onload = (e) => {
         const result = e.target?.result as string
+        setPreviewUrl(result)
         setAvatar(result)
       }
       reader.readAsDataURL(file)
     }
   }
 
+  const triggerFileInput = () => {
+    fileInputRef.current?.click()
+  }
+
   const removeAvatar = () => {
     setAvatar(null)
+    setPreviewUrl(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
   }
 
-  const generateAvatar = (name: string) => {
-    const initials = name
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase())
-      .join('')
-      .substring(0, 2)
-    
-    const colors = [
-      'bg-slate-500', 'bg-gray-500', 'bg-zinc-500', 'bg-neutral-500',
-      'bg-stone-500', 'bg-red-500', 'bg-orange-500', 'bg-amber-500',
-      'bg-yellow-500', 'bg-lime-500', 'bg-green-500', 'bg-emerald-500',
-      'bg-teal-500', 'bg-cyan-500', 'bg-sky-500', 'bg-blue-500',
-      'bg-indigo-500', 'bg-violet-500', 'bg-purple-500', 'bg-fuchsia-500',
-      'bg-pink-500', 'bg-rose-500'
-    ]
-    
-    const colorIndex = name.length % colors.length
-    return { initials, color: colors[colorIndex] }
-  }
-
   const handleSave = () => {
-    if (name.trim().length < 2) {
-      alert('El nombre debe tener al menos 2 caracteres.')
+    if (!name.trim()) {
+      alert('El nombre es requerido')
       return
     }
 
-    onUpdateProfile({
-      name: name.trim(),
+    onSaveProfile({
+      avatar,
       status: status.trim(),
-      avatar
+      name: name.trim()
     })
     
-    setIsEditingName(false)
-    setIsEditingStatus(false)
+    setIsEditing(false)
     onClose()
   }
 
-  const avatarData = generateAvatar(name)
+  const handleCancel = () => {
+    setAvatar(currentAvatar || null)
+    setStatus(currentStatus)
+    setName(currentName)
+    setPreviewUrl(currentAvatar || null)
+    setIsEditing(false)
+    setHasChanges(false)
+    onClose()
+  }
+
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="card-neutral w-full max-w-md max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-neutral-primary">Mi Perfil</h2>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+            Mi Perfil
+          </h2>
           <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            onClick={handleCancel}
+            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-neutral-secondary" />
+            <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
+        {/* Content */}
         <div className="p-6 space-y-6">
           {/* Avatar Section */}
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
-              {avatar ? (
-                <img
-                  src={avatar}
-                  alt="Avatar"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700"
-                />
-              ) : (
-                <div className={`w-24 h-24 rounded-full ${avatarData.color} flex items-center justify-center text-white text-2xl font-bold border-4 border-gray-200 dark:border-gray-700`}>
-                  {avatarData.initials || <User className="w-8 h-8" />}
-                </div>
-              )}
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                {previewUrl ? (
+                  <Image
+                    src={previewUrl}
+                    alt="Avatar preview"
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-8 h-8 text-gray-400" />
+                )}
+              </div>
               
+              {/* Camera button overlay */}
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 p-2 bg-slate-600 hover:bg-slate-700 text-white rounded-full shadow-lg transition-colors"
+                onClick={triggerFileInput}
+                className="absolute -bottom-1 -right-1 p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full transition-colors shadow-lg"
               >
                 <Camera className="w-4 h-4" />
               </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={triggerFileInput}
+                className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                Cambiar foto
+              </button>
+              
+              {previewUrl && (
+                <button
+                  onClick={removeAvatar}
+                  className="px-3 py-2 text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors"
+                >
+                  Eliminar
+                </button>
+              )}
             </div>
 
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              onChange={handleImageUpload}
+              onChange={handleFileSelect}
               className="hidden"
             />
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="text-sm text-slate-600 hover:text-slate-700 font-medium"
-              >
-                Cambiar foto
-              </button>
-              {avatar && (
-                <>
-                  <span className="text-neutral-muted">•</span>
-                  <button
-                    onClick={removeAvatar}
-                    className="text-sm text-red-600 hover:text-red-700 font-medium"
-                  >
-                    Eliminar
-                  </button>
-                </>
-              )}
-            </div>
           </div>
 
           {/* Name Section */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-secondary">Nombre</label>
-            {isEditingName ? (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && setIsEditingName(false)}
-                  className="input-field text-sm"
-                  autoFocus
-                  maxLength={30}
-                />
-                <button
-                  onClick={() => setIsEditingName(false)}
-                  className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900 rounded transition-colors"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between group">
-                <span className="text-neutral-primary font-medium">{name}</span>
-                <button
-                  onClick={() => setIsEditingName(true)}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-neutral-secondary hover:text-neutral-primary transition-all"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Nombre de usuario
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ingresa tu nombre"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              maxLength={50}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Máximo 50 caracteres
+            </p>
           </div>
 
           {/* Status Section */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-secondary flex items-center gap-2">
-              <Smile className="w-4 h-4" />
-              Estado
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Estado / Frase personal
             </label>
-            {isEditingStatus ? (
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && setIsEditingStatus(false)}
-                    className="input-field text-sm"
-                    placeholder="¿Cómo te sientes hoy?"
-                    maxLength={100}
-                  />
-                  <button
-                    onClick={() => setIsEditingStatus(false)}
-                    className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900 rounded transition-colors"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                {/* Status Suggestions */}
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  {statusSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setStatus(suggestion)}
-                      className="text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-neutral-secondary hover:text-neutral-primary transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
+            <div className="relative">
+              <textarea
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                placeholder="¿Qué está pasando?"
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                maxLength={200}
+              />
+              <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                {status.length}/200
               </div>
-            ) : (
-              <div className="flex items-center justify-between group">
-                <span className="text-neutral-secondary italic">
-                  {status || "Sin estado"}
-                </span>
-                <button
-                  onClick={() => setIsEditingStatus(true)}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-neutral-secondary hover:text-neutral-primary transition-all"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* QR Code Info */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-secondary">Tu código QR</label>
-            <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
-              <code className="text-sm font-mono text-neutral-primary break-all">
-                {userProfile.qrCode}
-              </code>
             </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Comparte lo que estás pensando o tu estado actual
+            </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={onClose}
-              className="flex-1 btn-secondary"
-            >
-              Cancelar
-            </button>
+          {/* Privacy Notice */}
+          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+            <p className="text-xs text-purple-700 dark:text-purple-300">
+              🔒 Tu información de perfil se almacena de forma segura y solo es visible para tus contactos.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-between items-center gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={handleCancel}
+            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            Cancelar
+          </button>
+          
+          <div className="flex gap-2">
+            {hasChanges && (
+              <button
+                onClick={() => {
+                  setAvatar(currentAvatar || null)
+                  setStatus(currentStatus)
+                  setName(currentName)
+                  setPreviewUrl(currentAvatar || null)
+                  setHasChanges(false)
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Deshacer
+              </button>
+            )}
+            
             <button
               onClick={handleSave}
-              className="flex-1 btn-primary"
+              disabled={!hasChanges || !name.trim()}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
             >
-              Guardar cambios
+              <Save className="w-4 h-4" />
+              Guardar
             </button>
           </div>
         </div>
