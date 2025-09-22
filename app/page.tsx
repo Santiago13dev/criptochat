@@ -10,9 +10,11 @@ import { CryptoManager } from '@/lib/crypto/encryption'
 import { notificationManager } from '@/lib/notifications'
 import { supabase } from '@/lib/supabase/client'
 import type { DBUser } from '@/lib/supabase/client'
-import { SettingsModal } from '@/src/components/SettingsModal'
-import { ContactList } from '@/src/components/ContactList'
-import { Settings, QrCode, UserPlus, Shield } from 'lucide-react'
+import { SettingsModal } from '../src/components/SettingsModal'
+import { ContactList } from '../src/components/ContactList'
+import { ProfileModal } from '../src/components/ProfileModal'
+import { useUserProfile } from '../src/hooks/useUserProfile'
+import { Settings, QrCode, UserPlus, Shield, User } from 'lucide-react'
 
 interface Message {
   id: string
@@ -42,10 +44,12 @@ export default function Home() {
   const [showQRModal, setShowQRModal] = useState(false)
   const [showScanModal, setShowScanModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
   const [scanInput, setScanInput] = useState('')
   const [isConnected, setIsConnected] = useState(false)
   const [cryptoManager, setCryptoManager] = useState<CryptoManager | null>(null)
   const [currentUser, setCurrentUser] = useState<DBUser | null>(null)
+  const { profile, saveProfile, clearProfile } = useUserProfile()
 
   // Initialize everything
   useEffect(() => {
@@ -183,11 +187,17 @@ export default function Home() {
     if (confirm('¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.')) {
       localStorage.removeItem('criptochat_contacts')
       localStorage.removeItem('criptochat_crypto')
+      clearProfile()
       setContacts([])
       setCurrentContact(null)
       setMessages([])
       alert('Todos los datos han sido eliminados')
     }
+  }
+
+  const handleSaveProfile = (profileData: { avatar: string | null; status: string; name: string }) => {
+    saveProfile(profileData)
+    alert('Perfil actualizado exitosamente')
   }
 
   const sendMessage = async () => {
@@ -262,15 +272,44 @@ export default function Home() {
     <main className="h-screen bg-gray-100 dark:bg-gray-900 text-neutral-primary flex">
       <aside className="w-80 glass-neutral flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold flex items-center gap-2 text-neutral-primary">
-            <Shield className="w-6 h-6 text-slate-600" />
-            CriptoChat
-            <span className="text-xs text-green-500 ml-auto flex items-center gap-1">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Shield className="w-6 h-6 text-slate-600" />
+              <h2 className="text-lg font-semibold text-neutral-primary">CriptoChat</h2>
+            </div>
+            <span className="text-xs text-green-500 flex items-center gap-1">
               <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
               {isConnected ? 'Conectado' : 'Desconectado'}
             </span>
-          </h2>
-          <p className="text-xs text-neutral-secondary mt-1">Tu ID: {myQRCode}</p>
+          </div>
+          
+          {/* Profile Section */}
+          <button
+            onClick={() => setShowProfileModal(true)}
+            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mb-3"
+          >
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+              {profile.avatar ? (
+                <img 
+                  src={profile.avatar} 
+                  alt={profile.name || 'Usuario'} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-5 h-5 text-gray-500" />
+              )}
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-medium text-sm text-neutral-primary">
+                {profile.name || 'Configura tu perfil'}
+              </p>
+              <p className="text-xs text-neutral-secondary truncate">
+                {profile.status || 'Sin estado'}
+              </p>
+            </div>
+          </button>
+          
+          <p className="text-xs text-neutral-secondary">Tu ID: {myQRCode}</p>
         </div>
 
         <div className="p-4 space-y-2">
@@ -437,6 +476,15 @@ export default function Home() {
         onClose={() => setShowSettingsModal(false)}
         onExportData={handleExportData}
         onClearData={handleClearData}
+      />
+
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        currentAvatar={profile.avatar || ''}
+        currentStatus={profile.status}
+        currentName={profile.name}
+        onSaveProfile={handleSaveProfile}
       />
     </main>
   )
